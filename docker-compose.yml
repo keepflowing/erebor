@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    env_file:
+      .env
+    environment:
+      POSTGRES_DB: ${DB}
+      POSTGRES_USER: ${DB_U}
+      POSTGRES_PASSWORD: ${DB_P}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    
+volumes:
+  postgres-data:
+    driver: local
