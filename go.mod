@@ -1,4 +1,4 @@
-module github.com/keepflowing/go
+module github.com/keepflowing/erebor
 
 go 1.23.2
 
