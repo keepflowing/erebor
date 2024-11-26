@@ -1,16 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"time"
+	"context"
 
 	"github.com/joho/godotenv"
-
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -39,7 +38,7 @@ func main() {
     pg := "postgresql://" + u + ":" + p +
 	    "@localhost:5432/" + d + "?sslmode=disable"
 
-    db, err := sql.Open("postgres", pg)
+    db, err := pgx.Connect(context.Background(), pg)
     
     // Check errors
     if err != nil  {
@@ -48,9 +47,12 @@ func main() {
 	fmt.Println("Connected successfully.")
 	fmt.Println()
     }
+
+    // Close DB connection when we're done
+    defer db.Close(context.Background())
     
     // Try to ping DB
-    if err := db.Ping(); err != nil {
+    if err := db.Ping(context.Background()); err != nil {
 	log.Fatal(err)
     }
 
@@ -66,7 +68,7 @@ func main() {
 	    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);`
 
-	if _, err := db.Exec(q); err != nil {
+	if _, err := db.Exec(context.Background(), q); err != nil {
 	    log.Fatal(err) 
 	}
     }
@@ -77,7 +79,7 @@ func main() {
     {
 	uname 	:= randSeq(8) 
 	pwd   	:= randSeq(8)
-	time  	:= time.UnixMilli(time.Now().UnixMilli()).UTC()
+	time  	:= time.Unix(time.Now().Unix(), 0).UTC()
 	
 	var id int
 
@@ -86,7 +88,8 @@ func main() {
 	    (username, password, created_at) VALUES ($1, $2, $3)
 	    RETURNING id`
 
-	if err := db.QueryRow(q, uname, pwd, time).Scan(&id); err != nil {
+	if err := db.QueryRow(
+	context.Background(), q, uname, pwd, time).Scan(&id); err != nil {
 	    log.Fatal(err)
 	} else {
 	    fmt.Println("Created user with id ", id)
@@ -110,7 +113,7 @@ func main() {
 	FROM users WHERE id = $1
 	`
 
-	if err := db.QueryRow(q, 1).Scan(
+	if err := db.QueryRow(context.Background(), q, 1).Scan(
 	&id, &uname, &pwd, &createdAt); err != nil {
 	      
 	    log.Fatal(err)
@@ -133,7 +136,7 @@ func main() {
 	q 	:= `
 	SELECT id, username, password, created_at FROM users
 	`
-	rows, err := db.Query(q)
+	rows, err := db.Query(context.Background(), q)
 	defer rows.Close()
 
 	if err != nil {
