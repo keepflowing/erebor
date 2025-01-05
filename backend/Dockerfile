@@ -15,6 +15,8 @@ FROM alpine:3.19
 
 WORKDIR /app
 
+RUN apk add --no-cache curl
+
 COPY --from=builder /app/backend .
 
 EXPOSE 8080

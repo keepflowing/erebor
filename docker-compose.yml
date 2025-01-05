@@ -18,12 +18,19 @@ services:
       - "8080:8080"
     environment:
       - DB_HOST=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=erebor
+      - DB_USER=${DB_U}
+      - DB_PASSWORD=${DB_P}
+      - DB_NAME=${DB}
       - DB_PORT=5432
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"] #todo endpoint
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s
 
   postgres:
     image: postgres:15-alpine
@@ -39,6 +46,12 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_U} -d ${DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     
 volumes:
   postgres-data:
