@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
 COPY . .
 
@@ -12,7 +12,9 @@ RUN npm run build
 # second stage
 FROM nginx:alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY --from=builder /app /usr/share/nginx/html
 
 EXPOSE 80
 
